@@ -3,6 +3,7 @@ package model;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class Joke {
 
@@ -14,11 +15,15 @@ public class Joke {
     private int likes;
 
     public Joke(String content) {
-        this.id = count++;
+        this(content,new ArrayList<>(), LocalDateTime.now(),0 );
+    }
+
+    public Joke(String content, List<String> comments, LocalDateTime dateCreated, int likes) {
+        this.id = ++count;
         this.content = content;
-        this.comments = new ArrayList<>();
-        this.dateCreated = LocalDateTime.now();
-        this.likes = 0;
+        this.comments = comments;
+        this.dateCreated = dateCreated;
+        this.likes = likes;
     }
 
     public int getId() {
@@ -28,15 +33,6 @@ public class Joke {
     public static void resetCount(){
         count = 0;
     }
-
-    public Joke(String content, List<String> comments, LocalDateTime dateCreated, int likes) {
-        this.content = content;
-        this.comments = comments;
-        this.dateCreated = dateCreated;
-        this.likes = likes;
-    }
-
-
 
     public String getContent() {
         return content;
@@ -68,5 +64,29 @@ public class Joke {
 
     public void like() {
         this.likes += 1;
+    }
+
+    @Override
+    public String toString() {
+        return "Joke{" +
+                "id=" + id +
+                ", content='" + content + '\'' +
+                ", comments=" + comments +
+                ", dateCreated=" + dateCreated +
+                ", likes=" + likes +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Joke joke = (Joke) o;
+        return id == joke.id && Objects.equals(dateCreated, joke.dateCreated);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, dateCreated);
     }
 }

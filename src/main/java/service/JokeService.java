@@ -10,9 +10,10 @@ import java.util.stream.Stream;
 
 public class JokeService {
 
-    public List<Joke> getAllSortedJokesByLikes() throws IOException {
+    public List<Joke> getAllSortedJokesByLikes(boolean fromLeast) throws IOException {
         List<Joke> jokes = readFromCsv();
-        jokes.sort(Comparator.comparingInt(Joke::getLikes));
+        if (fromLeast) jokes.sort(Comparator.comparingInt(Joke::getLikes));
+        else jokes.sort(Comparator.comparingInt(Joke::getLikes).reversed());
         return jokes;
     }
 
@@ -39,8 +40,20 @@ public class JokeService {
         writeJokesToFile(newJokes);
     }
 
+    public void likeJoke(int id) throws IOException {
+        List<Joke> newJokes = readFromCsv().stream().peek(joke -> {
+            if (joke.getId() == id) joke.like();
+        }).toList();
+
+        writeJokesToFile(newJokes);
+    }
+
     public void addJoke(Joke joke) throws IOException {
         writeAJokeToFile(joke);
+    }
+
+    public List<Joke> getJokes() throws IOException {
+        return readFromCsv();
     }
 
     public void removeJoke(int id) throws IOException {
@@ -50,15 +63,16 @@ public class JokeService {
     }
     private List<Joke> readFromCsv() throws IOException {
         File file = new File("jokes.csv");
+        Joke.resetCount();
         List<Joke> jokes = new ArrayList<>();
         if(file.exists()) {
             BufferedReader csvReader = new BufferedReader(new FileReader(file));
             String row = "";
             while ((row = csvReader.readLine()) != null) {
                 String[] data = row.split(",");
-                Joke joke;
-                    List<String> comments = new ArrayList<>(Arrays.asList(data[2].split("-###-")));
-                    joke = new Joke(data[0], comments, LocalDateTime.parse(data[2]), Integer.parseInt(data[3]));
+
+                List<String> comments = new ArrayList<>(Arrays.asList(data[2].split("-###-")));
+                Joke joke = new Joke(data[1], comments, LocalDateTime.parse(data[3]), Integer.parseInt(data[4]));
                 jokes.add(joke);
             }
             csvReader.close();
@@ -78,7 +92,7 @@ public class JokeService {
                 String commentsString = joke.getComments().stream()
                         .map(String::valueOf)
                         .collect(Collectors.joining("-###-"));
-                out.write(joke.getContent() + "," + commentsString + "," + joke.getDateCreated() + "," + joke.getLikes());
+                out.write(joke.getId()+ "," +joke.getContent() + "," + commentsString + "," + joke.getDateCreated() + "," + joke.getLikes());
                 out.newLine();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -93,9 +107,12 @@ public class JokeService {
     }
 
     private List<Joke> writeJokesToFile(List<Joke> jokes) throws IOException {
-        writeToCsv(jokes.get(0), false);
-        jokes.remove(0);
-        jokes.forEach(joke -> {
+        ArrayList<Joke> newJokes = new ArrayList<>(jokes);
+
+        if(newJokes.size() < 1) return null;
+        writeToCsv(newJokes.get(0), false);
+        newJokes.remove(newJokes.get(0));
+        newJokes.forEach(joke -> {
             try {
                 writeAJokeToFile(joke);
             } catch (IOException e) {
